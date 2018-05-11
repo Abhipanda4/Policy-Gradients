@@ -107,6 +107,7 @@ def main():
     running_reward = 0
     rewards = []
     losses = []
+    episodes = []
     for i in range(N_EPISODES):
         R, L = run_one_episode()
         loss, R = improve_policy(R, L)
@@ -121,13 +122,16 @@ def main():
         if i % SAVE_STEPS == 0:
             rewards.append(running_reward)
             losses.append(loss)
+            episodes.append(i)
 
         # log info
         if (i + 1) % LOG_STEPS == 0:
             print("Completed [%6d] simulations... Running reward: [%.5f]" %(i + 1, running_reward))
 
     # plot rewards
-    plt.plot(rewards)
+    plt.plot(episodes, rewards)
+    plt.xlabel("Episodes")
+    plt.ylabel("Running Reward")
     plt.show()
 
 if __name__ == "__main__":
