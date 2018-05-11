@@ -19,9 +19,9 @@ class Policy(nn.Module):
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         x = F.softmax(x, dim=1)
-        # print(x)
         return x
 
+# global parameters
 model = Policy(4, 2)
 optimizer = optim.Adam(model.parameters(), lr=5e-5)
 env = gym.make('CartPole-v0')
@@ -31,6 +31,13 @@ LOG_STEPS = 100
 SAVE_STEPS = 50
 
 def select_action(S):
+    '''
+    select action based on currentr state
+    args:
+        S: current state
+    returns:
+        action to take, log probability of the chosen action
+    '''
     S = torch.from_numpy(S).float().unsqueeze(0)
     S = Variable(S)
     out = model(S)
@@ -42,6 +49,12 @@ def select_action(S):
 
 
 def run_one_episode():
+    '''
+    Simulate one full episode
+    returns:
+        a list of rewards at each step,
+        a list of log probs of actions taken at each step
+    '''
     rewards = []
     log_probs = []
     is_done = False
@@ -55,15 +68,27 @@ def run_one_episode():
     return rewards, log_probs
 
 def improve_policy(R, L):
+    '''
+    perform weight updates using REINFORCE algo
+    args:
+        R: list of rewards at each step of episode
+        L: list of log prob of each action chosen
+    returns:
+        loss in the episode
+        total reward for this episode
+    '''
     discounted_R = []
     total_R = 0
+    # compute discounted return from each action
     for r in reversed(R):
         total_R = r + GAMMA * total_R
         discounted_R.insert(0, total_R)
 
+    # for normalization
     mean_R = np.mean(discounted_R)
     stddev_R = np.std(discounted_R)
 
+    # compute normalized advantage
     discounted_R = (discounted_R - mean_R) / (stddev_R + 0.0000001)
     discounted_R = torch.from_numpy(discounted_R)
 
@@ -101,8 +126,7 @@ def main():
         if (i + 1) % LOG_STEPS == 0:
             print("Completed [%6d] simulations... Running reward: [%.5f]" %(i + 1, running_reward))
 
-    plt.plot(losses)
-    plt.show()
+    # plot rewards
     plt.plot(rewards)
     plt.show()
 
